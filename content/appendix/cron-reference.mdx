@@ -1,0 +1,70 @@
+# Cron Reference
+## 📌 TL;DR
+- OpenClaw has its own scheduler at `~/.openclaw/cron/`; you manage it by talking to Jarvis.
+- Jobs are JSON files; the OpenClaw Gateway daemon executes them on schedule.
+- View jobs visually in Mission Control's Calendar tab or by asking Jarvis.
+- Common jobs include daily briefings, weekly meal prep, and market updates.
+
+## 🎯 How Scheduling Works
+OpenClaw uses its own **scheduler**, not the Unix `cron` system. Job definitions live as JSON files in `~/.openclaw/cron/<job-id>/`. You never edit these files directly. Instead, you ask **Jarvis** in plain English to schedule, edit, or delete tasks. The **OpenClaw Gateway** daemon reads these files and executes jobs at their specified times.
+
+## 📋 Common Default Jobs
+Here are typical jobs you might schedule after setup. Jarvis can create these for you.
+
+| Job Name | Typical Schedule | What It Does | Which Agent Runs It |
+| :--- | :--- | :--- | :--- |
+| **Daily Morning Briefing** | `30 8 * * *` (08:30 daily) | Fetches weather, headlines, and calendar. | Jarvis (orchestrates, uses Sherlock for news) |
+| **Daily Wrap-up** | `0 19 * * *` (19:00 daily) | Summarizes the day's tasks and sets tomorrow's intent. | Jarvis |
+| **Weekly Meal Prep** | `0 9 * * 0` (Sundays 09:00) | Plans recipes and generates a grocery list. | Shakespeare |
+| **Market Briefing** | `0 9 * * 1-5` (Weekdays 09:00) | Provides a snapshot of key financial indices. | Jarvis + Sherlock |
+| **Trash-Out Reminder** | `0 18 * * 3` (Wednesdays 18:00) | Sends a Telegram reminder to take out the trash. | OpenClaw scheduler (static reminder, no agent) |
+| **AI News Brief** | `0 8 * * *` (08:00 daily) | Summarizes top AI/tech news from trusted sources. | Sherlock |
+
+## ➕ Adding a Job
+Use natural language with Jarvis. He will write the correct cron expression and confirm.
+
+**💬 Try this**
+> "Jarvis, remind me every Monday at 9 AM to review my week."
+
+**✅ What you should see**
+Jarvis confirms the job is scheduled and provides a brief description. The job will appear on your **Mission Control Calendar** tab.
+
+## ⏸️ Pausing, Editing, or Deleting Jobs
+Manage jobs through conversation with Jarvis.
+
+- **Pause a job**: `"Jarvis, pause my daily wrap-up for a week."`
+- **Edit a job's schedule**: `"Jarvis, change my market briefing to run at 8:30 instead of 9."`
+- **Delete a job**: `"Jarvis, delete the meal-prep reminder."`
+
+Jarvis will confirm the action and update the underlying job file.
+
+## 👁️ Viewing Scheduled Jobs
+You have two primary ways to see what's scheduled:
+
+1.  **Mission Control Calendar (Recommended)**: The visual calendar at `http://localhost:3000/calendar` shows all jobs.
+2.  **Ask Jarvis**: Simply say, `"What jobs do you have scheduled for me?"` for a list.
+
+## 📜 Cron Expression Syntax Primer
+While Jarvis handles the syntax, here's the format used: `(minute) (hour) (day-of-month) (month) (day-of-week)`.
+
+| Expression | Meaning |
+| :--- | :--- |
+| `30 8 * * *` | Daily at 08:30. |
+| `0 8 * * 1-5` | At 08:00 on weekdays (Monday-Friday). |
+| `0 9 * * 0` | At 09:00 on Sundays. |
+| `*/30 * * * *` | Every 30 minutes. |
+
+## 📁 Where Job Files Live
+All scheduler data is under `~/.openclaw/cron/`. Each job has its own directory (e.g., `~/.openclaw/cron/daily-briefing/`) containing:
+- `job.json`: The job definition (schedule, command, metadata).
+- `run.log`: A history of execution attempts and outputs.
+
+**Do not edit these files manually.** Use Jarvis. This structure is documented for troubleshooting.
+
+## 🐛 Troubleshooting
+
+| Symptom | Likely Cause | Fix |
+| :--- | :--- | :--- |
+| **A job didn't run.** | Pi was off/sleeping, or the Gateway daemon stopped. | 1. Ask Jarvis: `"Why didn't my <job> run?"`<br />2. Shell: `openclaw gateway restart`<br />3. Check the job's `run.log`. |
+| **Too many notifications.** | Job frequency is too high. | Ask Jarvis: `"Reduce the frequency of my <job> reminders."` |
+| **I want to test a job now.** | You want to see the output immediately. | Ask Jarvis: `"Run my <X> job now."` He will execute it on demand. |

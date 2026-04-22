@@ -1,0 +1,275 @@
+# Chapter 2 — Install OpenClaw and Meet Jarvis
+## Tagline: From fresh Pi to your first conversation with an AI you own.
+
+## 📌 TL;DR
+*   Install **Node.js** and the **OpenClaw CLI** on your Raspberry Pi.
+*   Create a free **Telegram account** and a chat bot using **@BotFather**.
+*   Get an **Anthropic API key** to provide Jarvis with a powerful, reliable "brain."
+*   Pair your phone to your Pi and have your first direct-message conversation with your own AI.
+*   Test with simple prompts to verify everything is working correctly.
+
+⏱️ **Time:** ~60-75 minutes
+📋 **Difficulty:** Beginner-friendly
+🎯 **What you'll have at the end:** A DMable AI assistant named Jarvis in Telegram, running on your own hardware.
+
+## 👋 Welcome Back
+In Chapter 1, you transformed your Raspberry Pi from a piece of hardware into a secure, always-on server you can reach from anywhere. Good work. That foundation is critical. Now, we make it magical.
+
+This chapter is the payoff. By the end, you will receive a direct message from an AI named **Jarvis** on your phone. Not from a corporate server farm, but from the Pi sitting on your desk. This is your first real win. Let's build it.
+
+## 📦 Install Node.js
+Open your terminal connection to the Pi (via SSH or the Pi Connect shell). We'll install **Node.js**, which is a runtime that lets us run JavaScript applications—like OpenClaw—on your computer.
+
+Run the following commands, one at a time:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+This downloads the installer script and then installs Node.js and its package manager, `npm`.
+
+**Verify the installation worked:**
+```bash
+node -v
+npm -v
+```
+Both commands should print version numbers (e.g., `v22.x.x` and `10.x.x`). If `node -v` says "command not found," simply close your terminal window and open a new one to refresh the system path, then try again.
+
+## 🦞 Install OpenClaw
+With Node.js ready, install the OpenClaw command-line interface globally:
+```bash
+npm install -g openclaw
+```
+
+**What is OpenClaw?** It's the platform that runs your personal AI agents. Think of it as the operating system for your AI team. It handles connecting to chat apps like Telegram, securely managing your API keys, scheduling tasks, and keeping everything contained and safe on your Pi.
+
+**Verify the install:**
+```bash
+openclaw --version
+```
+You should see a version number, confirming OpenClaw is installed and ready.
+
+## 🚀 Run `openclaw setup`
+Now, initialize your OpenClaw workspace. This creates the home directory for all your AI's files and configurations.
+```bash
+openclaw setup
+```
+
+The setup wizard will walk you through:
+1.  Choosing a workspace directory (accept the default: `~/.openclaw/`).
+2.  Creating a default user profile.
+3.  Setting initial agent defaults.
+
+<Screenshot src="/media/ch2/setup-wizard.png" caption="The interactive openclaw setup wizard." />
+
+This command creates `~/.openclaw/` — the central hub for your AI. Everything from personality files to secret keys will live here, organized and private.
+
+## 🤖 Create a Telegram Bot with BotFather
+Jarvis needs a way to talk to you. We'll use Telegram, a popular messaging app, because it's free and makes creating bots very easy.
+
+1.  **Open Telegram** on your phone or desktop.
+2.  In the search bar, look for **`@BotFather`** (the official, verified bot with a blue checkmark).
+3.  Tap **Start** to begin a chat with it.
+4.  Type the command **`/newbot`**.
+5.  **Pick a friendly display name** for your bot (e.g., "Jarvis" or "MyButler").
+6.  **Pick a unique username** that must end in `bot` (e.g., `my_jarvis_bot` or `alex_pi_bot`).
+
+**⚠️ Critical Step:** BotFather will reply with a long string of characters—your bot's **API token**. It looks like `1234567890:ABCdefGhIJKlmNoPQRsTuVwxyz`. **Copy this token immediately.** This token is your bot's password; anyone with it can control your bot. Guard it.
+
+<Screenshot src="/media/ch2/botfather-token.png" caption="BotFather provides your bot's API token. Copy it." />
+
+**Pitfall:** If your chosen username is already taken, BotFather will tell you. Just try a different variation (add numbers or underscores).
+
+## 🔐 Give OpenClaw Your Telegram Credentials
+We need to tell OpenClaw how to connect to the bot you just created.
+```bash
+openclaw configure
+```
+
+In the interactive wizard:
+1.  Select **Telegram** as a channel to configure.
+2.  When prompted, **paste the API token** you copied from BotFather.
+
+OpenClaw will encrypt and store this token securely in `~/.openclaw/config.json`. Your Pi can now send and receive messages as your bot.
+
+## 🧠 Get an API Key for Jarvis's Brain
+Jarvis needs intelligence. For this guide, we'll use **Claude** by Anthropic. It's fast, reliable, and excellent at being a helpful assistant. The free tier provides enough credits to start.
+
+1.  Go to [console.anthropic.com](https://console.anthropic.com) and create an account (email and password are fine).
+2.  Navigate to **Settings → API Keys**.
+3.  Click **Create Key**.
+4.  Name it something like `jarvis-pi`.
+5.  **Copy the key.** It starts with `sk-ant-api03-...`. Treat this with the same care as your bot token—it's your paid access to Claude's models.
+6.  **Add credits:** Click **Billing** and add $5-10. At our scale of personal use, this will last for months.
+
+<Screenshot src="/media/ch2/anthropic-api-key.png" caption="Creating your API key in the Anthropic console." />
+
+**Why Claude?** It offers a great balance of capability, speed, and cost for a beginner. You can switch to other providers (like OpenRouter or a local model with Ollama) later, but Claude provides the smoothest starting experience.
+
+## 🔑 Save the API Key on the Pi
+We must store the API key on your Pi securely, where OpenClaw can find it but no one else can.
+
+First, create a secure directory for secrets:
+```bash
+mkdir -p ~/.openclaw/secrets && chmod 700 ~/.openclaw/secrets
+```
+
+Create and edit the environment file for Anthropic:
+```bash
+nano ~/.openclaw/secrets/anthropic.env
+```
+
+Inside the `nano` text editor, paste the following single line, replacing `YOUR-KEY-HERE` with the actual key you copied:
+```
+ANTHROPIC_API_KEY=sk-ant-api03-YOUR-KEY-HERE
+```
+
+To save: Press `Ctrl+O`, then `Enter`. To exit: Press `Ctrl+X`.
+
+**Lock the file down:** Set permissions so only you can read it.
+```bash
+chmod 600 ~/.openclaw/secrets/anthropic.env
+```
+
+**Confirm the permissions:**
+```bash
+ls -la ~/.openclaw/secrets/anthropic.env
+```
+The output should show `-rw-------`, confirming only the file owner has read/write access.
+
+## 🦾 Configure Jarvis as Your Main Agent
+Now we create Jarvis himself, using the wizard.
+```bash
+openclaw configure
+```
+
+In the wizard:
+1.  Choose to configure an **Agent**.
+2.  Name it `jarvis` (or your preferred name).
+3.  Set the default model to **Claude Opus** (most capable) or **Claude Sonnet** (excellent and more cost-effective). For your first AI, Opus is recommended.
+4.  The wizard will ask if you want to scaffold the core workspace files. Say **yes**.
+
+**What are these files?** They form Jarvis's identity and operating context:
+*   `SOUL.md`: His personality, tone, and conversational style.
+*   `IDENTITY.md`: His name, role, and core vibe.
+*   `USER.md`: What he knows about *you* (your name, preferences, context).
+*   `AGENTS.md`: High-level rules and guardrails he reads at the start of every session.
+
+The wizard will create these files in `~/.openclaw/workspace/` with sensible defaults.
+
+**💡 Your First Personalization:** The old way would be to open `USER.md` in a text editor. You now have a smarter option: **tell Jarvis about yourself once, and let him write the file.** We'll do this in a moment, after pairing.
+
+## 📱 Pair Your Phone to Jarvis
+This is the moment. We'll link your personal Telegram account to the bot running on your Pi.
+
+On your **Pi terminal**, run:
+```bash
+openclaw qr
+```
+
+This command does two things:
+1.  It will display a **QR code** in your terminal.
+2.  It will show a **setup code** (a short alphanumeric string).
+
+<Screenshot src="/media/ch2/qr-code-terminal.png" caption="The openclaw qr command generates a pairing QR and code." />
+
+On your **phone**:
+1.  Open Telegram.
+2.  Search for and open the chat with your bot (using the username you created with BotFather, e.g., `@my_jarvis_bot`).
+3.  Send the command **`/start`** to the bot.
+4.  Your bot (now controlled by OpenClaw) will ask for a **pairing code**.
+5.  Enter the **setup code** from your Pi terminal.
+
+**✅ Success!** You will receive an immediate reply from Jarvis in your Telegram chat.
+
+> 🎉 **You did it.** You just sent your first message to an AI running on your own hardware. Don't skip this feeling—you actually built something real. This is the win.
+
+## 💬 Try These Prompts (Verify Jarvis is Working)
+Let's confirm everything is functioning with a few simple tests. For each prompt, you should see a relevant, thoughtful reply.
+
+**1. Say hello:**
+```
+Hey Jarvis
+```
+**✅ Expect:** A greeting — a little generic for now, because he doesn't know you yet. We'll fix that in the next step.
+
+**2. Tell him about yourself (this replaces editing USER.md by hand):**
+```
+Jarvis, save this to my user profile so you remember it: my name is <your name>, I'm in <your timezone>, and I prefer <anything you want him to know — metric units, tea over coffee, morning-person schedule, whatever>.
+```
+**✅ Expect:** Jarvis confirms he's written it to `USER.md` and summarizes what he captured. Future conversations reference it automatically.
+
+**3. Say hello again (see the personalization land):**
+```
+Hey Jarvis
+```
+**✅ Expect:** This time, the greeting uses your name and references something specific you told him. Personality, not template.
+
+**4. Ask about his capabilities:**
+```
+What can you help me with?
+```
+**✅ Expect:** A plain-English summary of his configured skills and purpose, not a generic corporate sales pitch.
+
+**5. Check the weather:**
+```
+What's the weather today?
+```
+**✅ Expect:** A forecast for the location you told him about in step 2.
+
+**6. Inquire about his skills:**
+```
+What skills do you have installed?
+```
+**✅ Expect:** A list of his currently active skills (e.g., weather, system healthcheck, note-taking).
+
+**7. Test a quick calculation:**
+```
+What's a 15% tip on a $47 dinner?
+```
+**✅ Expect:** A direct calculation (`$7.05`). Proves Jarvis is reasoning, not just pattern-matching.
+
+## 🔍 Understanding the Chat Experience
+Let's demystify what's happening:
+*   **The Path:** Your message goes Phone → Telegram Servers → Your Pi (via the bot token) → Jarvis (Claude API) → Response back along the same path.
+*   **Memory:** Jarvis can remember conversations within a session and, via the `MEMORY.md` file and daily notes in the `memory/` directory, across weeks or months.
+*   **Privacy Note:** Your messages transit through Telegram's infrastructure. This is the trade-off for incredible convenience. If absolute privacy is critical, alternatives like Signal or fully local LLMs exist — they're worth exploring on your own once you're comfortable with the basics.
+
+## 🛠️ Personalize Jarvis's Personality (Optional but Fun)
+You already shaped `USER.md` by telling Jarvis about yourself. You can shape his *personality* the same way — no file editor needed.
+
+Try a prompt like:
+```
+Jarvis, update your SOUL: always include a short, relevant haiku at the end of your first greeting each day. Keep the rest of your personality as-is.
+```
+
+**✅ Expect:** Jarvis confirms he's updated `SOUL.md` with the new trait and summarizes what changed. Your next morning greeting will land with a haiku.
+
+You can evolve him this way over time — "be more concise in replies," "sign off with a sign-off," "default to Celsius." It's your AI; shape its personality with conversation, not a text editor.
+
+> **Why this works:** Jarvis's personality lives in plain Markdown files (`SOUL.md`, `USER.md`, `IDENTITY.md`) in `~/.openclaw/workspace/`. You *can* still open them in a text editor if you want full control — but for most changes, asking Jarvis to update them is faster and less error-prone.
+
+## 📝 Save These for Later (Checklist)
+Keep a note of these details. You won't need them daily, but they're essential for recovery or advanced setup.
+*   **Telegram Bot Username:** `@___________bot`
+*   **Telegram Bot Token:** Securely stored in `~/.openclaw/config.json` (encrypted).
+*   **Anthropic API Key:** Securely stored in `~/.openclaw/secrets/anthropic.env`.
+*   **Your Personal Telegram Chat ID:** Jarvis knows it. You can ask, `"What's my Telegram chat ID?"` and he'll tell you.
+
+## ✅ What You Just Accomplished
+
+Take a step back. In this chapter you:
+
+1. **Installed Node.js and the OpenClaw CLI** on your Pi — the runtime and orchestration layer for everything that follows.
+2. **Created a Telegram bot** with BotFather and gave OpenClaw its credentials.
+3. **Got an Anthropic API key** and stored it securely in `~/.openclaw/secrets/anthropic.env` with `chmod 600`.
+4. **Configured Jarvis** as your main agent with his core personality files (`SOUL.md`, `IDENTITY.md`, `USER.md`, `AGENTS.md`).
+5. **Paired your phone** to the bot and had your first conversation with an AI running on hardware you own.
+6. **Personalized Jarvis by talking to him** — shaping `USER.md` and `SOUL.md` through chat instead of a text editor. That's the agent-first rhythm you'll use for the rest of the guide.
+
+You now own an AI. Not a chat window pointing at someone else's servers — an assistant whose keys, memory, personality, and process all live on a Raspberry Pi on your desk.
+
+## ➡️ What's Next
+
+**Chapter 3: Install Your Specialist Team.** You'll add Mr. Stark (engineer), Sherlock (researcher), and Shakespeare (writer) using the same two-step rhythm — save one key, prompt Jarvis. From here on, shell work shrinks and conversation takes over.
+

@@ -1,0 +1,104 @@
+# Glossary
+## 📌 TL;DR
+- **Agents** (Jarvis, Mr. Stark, Sherlock, Shakespeare) are specialized AIs with distinct roles.
+- **Providers** (Anthropic, OpenRouter, Brave) supply models and services via API keys.
+- Core infrastructure includes the **Gateway**, **Mission Control**, and the **scheduler**.
+- All data and config lives under `~/.openclaw/`.
+
+## A
+**Agent**
+A specialized AI with a defined role, model, and invocation method within OpenClaw. The four core agents are Jarvis (orchestrator), Mr. Stark (engineer), Sherlock (researcher), and Shakespeare (writer).
+
+**Agent-first**
+The core OpenClaw principle: after initial setup, you manage your system primarily by talking to agents (especially Jarvis) in natural language, rather than running shell commands manually.
+
+**Anthropic**
+The AI safety and research company that provides the **Claude** family of models. OpenClaw uses Anthropic's API for Jarvis (Claude Opus) and Mr. Stark (Claude Sonnet via the Claude Code CLI).
+
+**API Key**
+A unique credential that authorizes your OpenClaw installation to make calls to an external service like Anthropic or OpenRouter. Stored securely in `~/.openclaw/secrets/*.env` files with `chmod 600` permissions.
+
+## B
+**Brave Search**
+The web search provider used by **Sherlock** to gather real-time information. It offers a free tier covering approximately 2000 queries per month.
+
+## C
+**Claude Code CLI**
+Anthropic's official command-line interface for using Claude as a coding assistant. It is the runtime environment for **Mr. Stark**.
+
+**Claude Opus**
+Anthropic's most capable (and expensive) model, used by **Jarvis** for orchestration and complex reasoning.
+
+**Claude Sonnet**
+Anthropic's balanced mid-tier model, used by **Mr. Stark** for code generation and system tasks via the Claude Code CLI.
+
+**Cron (OpenClaw)**
+OpenClaw's internal scheduler, located at `~/.openclaw/cron/`. It uses JSON job definitions and is managed by talking to Jarvis. This is **not** the Unix `cron` system.
+
+## D
+**DeepSeek V3.2**
+A powerful, cost-effective model accessed via **OpenRouter**. It is the engine used by the **Shakespeare** agent for structured writing and content generation.
+
+## G
+**Gateway**
+The OpenClaw daemon that handles message routing. It listens for your Telegram messages, delivers them to Jarvis, executes scheduled jobs from the **cron** directory, and sends responses back to you.
+
+## J
+**Jarvis**
+Your main orchestrator agent. Running on **Claude Opus** via Anthropic, Jarvis converses with you on Telegram, manages context, and delegates tasks to the specialist agents (Mr. Stark, Sherlock, Shakespeare).
+
+## M
+**Memory Files**
+Plain-text files stored in `~/.openclaw/workspace/memory/` that provide **Jarvis** with persistent, long-term context about your preferences, projects, and past interactions across sessions.
+
+**Mission Control**
+The custom Next.js web dashboard built during the guide. It runs on your Pi and you open it at `http://localhost:3000` in your laptop's browser (via an SSH tunnel). Provides a real-time view of your agent team's activity, tasks, and scheduled jobs via SSE.
+
+**Mr. Stark**
+Your engineer agent. He uses **Claude Sonnet** via the **Claude Code CLI** to execute shell commands, write code, debug issues, and manage system tasks when directed by Jarvis.
+
+## O
+**OpenClaw**
+The open-source framework that orchestrates a personal AI agent team on a Raspberry Pi. It handles agent communication, scheduling, memory, and provides the **Gateway** and **Mission Control** interfaces.
+
+**OpenRouter**
+An API gateway that provides unified access to many LLM providers. OpenClaw uses it to run **Sherlock** (Qwen3-235B) and **Shakespeare** (DeepSeek V3.2).
+
+## P
+**Prompt Injection**
+A security attack where untrusted input (e.g., from an email or webpage an agent reads) is crafted to trick the agent into performing unauthorized actions. A key security consideration for agents like **Sherlock** that process external data.
+
+## Q
+**Qwen3-235B**
+A large, capable reasoning model from Alibaba. It is the model used by the **Sherlock** research agent, accessed via the **OpenRouter** API.
+
+## R
+**Raspberry Pi 5**
+The recommended single-board computer (costing ~$80-120 for a kit) that serves as the always-on host for your OpenClaw agent team in this guide.
+
+## S
+**Secrets Vault**
+The directory `~/.openclaw/secrets/` where all **API keys** are stored in `.env` files (e.g., `anthropic.env`, `openrouter.env`). These files are protected with `chmod 600` permissions.
+
+**Shakespeare**
+Your writer agent. Specializes in generating well-structured, reference-dense content like documentation and plans. Runs on **DeepSeek V3.2** via **OpenRouter**.
+
+**Sherlock**
+Your research agent. Specializes in finding, summarizing, and citing information from the web. Runs on **Qwen3-235B** via **OpenRouter** and uses **Brave Search** as its backend.
+
+**SSE (Server-Sent Events)**
+A lightweight streaming protocol used by **Mission Control** to push live updates (like new tasks or agent messages) from the Pi to your browser without requiring page refreshes.
+
+**SSH Tunnel**
+A secure port-forwarding method used to access **Mission Control** from your laptop. You forward your local port (e.g., 3000) to the Pi's port 3000 over an encrypted SSH connection.
+
+## T
+**Telegram Bot**
+The bot you create via @BotFather on Telegram. It acts as the messaging interface between you and **Jarvis**. Its token is stored encrypted in `~/.openclaw/openclaw.json`.
+
+**tmux**
+A terminal multiplexer. It is used in this guide to keep the **Mission Control** Next.js development server running persistently in the background after your SSH session ends. OpenClaw does not use `systemd` for agent services.
+
+## W
+**Wrapper Script**
+A small shell script in `~/.openclaw/workspace/scripts/` that invokes a specialist agent with the correct environment, flags, and context. The primary example is `stark.sh` for **Mr. Stark**.

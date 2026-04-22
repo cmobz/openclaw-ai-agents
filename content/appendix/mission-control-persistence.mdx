@@ -1,0 +1,76 @@
+# Mission Control Persistence
+
+## 📌 TL;DR
+*   **Mission Control** runs as a `next dev` server inside a `tmux` session, which keeps it alive if your SSH connection drops.
+*   It **does not survive a Pi reboot**. After a restart, the dashboard at `http://localhost:3000` will be unavailable until you start it again.
+*   **Agent-first recovery:** ask Jarvis to check and restart it.
+*   **Shell fallback:** a small `tmux` recipe is below if you'd rather do it by hand.
+
+## 👋 The Problem
+Your Mission Control dashboard runs as a development server on your Raspberry Pi. To prevent it from stopping when you close your SSH terminal, we run it inside a **`tmux` session**.
+
+`tmux` is great for surviving SSH disconnects, but it is not a system service. When your Pi reboots — whether planned or after a power flicker — all `tmux` sessions are terminated. Until someone restarts the dev server, `http://localhost:3000` returns a "connection refused" error.
+
+For a personal, single-user dashboard, that's a feature, not a bug: one less background service with permissions you didn't explicitly grant.
+
+## 🦾 Agent-First Recovery (Recommended)
+The simplest way to restore your dashboard is to ask Jarvis. He knows the tmux session name and the correct start command.
+
+**💬 Try this**
+> Jarvis, is Mission Control running? Start it if not.
+
+**✅ What you should see**
+> "Checking Mission Control... the `mc` tmux session isn't running. Starting the dev server now — should be reachable at `http://localhost:3000` in about 10 seconds."
+
+A few seconds later you reload your browser tab, and the dashboard is back. Done.
+
+## 🛠️ Manual Recovery (Shell Fallback)
+If you need (or prefer) to do it yourself via SSH:
+
+1. Start a new detached tmux session named `mc` and launch the dev server inside it:
+    ```bash
+    tmux new -s mc -d
+    tmux send-keys -t mc "cd ~/.openclaw/workspace/mission-control && npm run dev" Enter
+    ```
+2. Verify by attaching to the session:
+    ```bash
+    tmux attach -t mc
+    ```
+    You should see Next.js output ending in `✓ Ready in ...`. Detach without stopping it by pressing **`Ctrl+b`**, then **`d`**.
+3. Re-open `http://localhost:3000` in your laptop browser (with the SSH tunnel still active).
+
+## ⚙️ Why Not systemd?
+You might wonder why this guide doesn't wrap Mission Control in a proper **`systemd`** service. A few deliberate reasons:
+
+*   **No-sudo by design.** The whole OpenClaw setup runs under your user account, avoiding `sudo` and root-level changes. It's a simpler, safer default for a personal box.
+*   **Sufficient for personal use.** For a single-user dashboard you open a few times a day, `tmux` + "ask Jarvis" is plenty. Every additional service is another thing to debug when it misbehaves.
+*   **Not forever.** If you end up running this for a team, or just want bulletproof uptime, adding a **user-level `systemd` service** is a reasonable upgrade. Ask Jarvis or Mr. Stark when you're ready — it's a well-trodden recipe.
+
+## 🔄 Auto-Check After Reboot (Optional)
+For the truly hands-off, you can automate the post-reboot nudge. The cleanest path is a `@reboot` entry in your Unix crontab that asks Jarvis, via the OpenClaw CLI, to check Mission Control once the system has settled:
+
+```bash
+# Open your user crontab
+crontab -e
+
+# Add (adjust the sleep if your Pi boots slowly):
+@reboot sleep 60 && /home/<your-user>/.npm-global/bin/openclaw message send "Jarvis, is Mission Control running? Start it if not." > /tmp/mc-reboot-check.log 2>&1
+```
+
+What this does:
+*   Waits 60 seconds after boot for the OpenClaw Gateway daemon to come up.
+*   Sends Jarvis a plain-English message through the CLI. He reads it, checks, restarts if needed, and writes a one-line confirmation to `/tmp/mc-reboot-check.log`.
+
+If you'd rather not add a Unix `cron` entry, skip this section. Manually asking Jarvis the first time you open the dashboard after a reboot is perfectly fine.
+
+## 🆘 Troubleshooting
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| `http://localhost:3000` gives `connection refused` after a reboot. | `> Jarvis, start Mission Control.` | Run the two `tmux` commands above. |
+| `tmux attach -t mc` fails with "no such session". | `> Jarvis, the mc tmux session is gone. Recreate it.` | `tmux new -s mc -d && tmux send-keys -t mc "cd ~/.openclaw/workspace/mission-control && npm run dev" Enter` |
+| Startup fails with "port 3000 already in use". | `> Jarvis, kill whatever is bound to port 3000 and restart Mission Control.` | `pkill -f "next.*3000"` then retry the `tmux` steps. |
+| Dashboard is up, but changes I make in Telegram don't show. | `> Jarvis, the dashboard isn't receiving events. Check the SSE broadcast path.` | Check `~/.openclaw/workspace/mission-control/logs/` for server errors. |
+
+## ➡️ Back to the Guide
+Return to [Chapter 4 — Build Your Mission Control](/guide/chapter-4) or [Chapter 5 — Daily Automations & Cron](/guide/chapter-5), whichever sent you here.

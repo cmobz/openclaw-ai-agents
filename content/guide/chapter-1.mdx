@@ -1,0 +1,185 @@
+# Chapter 1 — Set Up Your Raspberry Pi
+
+## 📌 TL;DR
+*   Assemble your hardware (**CanaKit** pre-configured or **DIY** part-by-part) and flash the OS using the official **Raspberry Pi Imager**.
+*   Boot your Pi, complete the first-run setup wizard, and perform your first system update.
+*   You can now access your Pi remotely in **two ways**: **Raspberry Pi Connect** (easy browser-based access) or **SSH** (powerful terminal access for local networks).
+*   Enable `unattended-upgrades` to keep your Pi secure automatically. Save crucial details like IP addresses and passwords.
+*   This chapter gets you from a box of parts to a secure, updatable Pi you can control from your laptop.
+
+## 👋 Overview
+This guide walks you through the complete, start-to-finish setup of your **Raspberry Pi**, the brain of your OpenClaw controller. Whether you bought a convenient kit or sourced the components yourself, we’ll get your system booted, updated, secured, and—most importantly—**accessible from your laptop**. The goal is a stable, reliable foundation for all future chapters.
+
+## 📦 What You'll Need
+You need a Raspberry Pi 5 (recommended) or Pi 4, plus the components to make it run.
+
+| Component | CanaKit (Track A) | DIY (Track B) |
+| :--- | :--- | :--- |
+| **Board** | Raspberry Pi 5 (or 4) | Raspberry Pi 5 (or 4) |
+| **Power Supply** | Included USB-C PSU (5V/5A for Pi 5) | Official Raspberry Pi PSU or equivalent (5V/5A for Pi 5) |
+| **Storage** | Pre-installed 128GB MicroSD card | Blank, high-quality MicroSD card (≥32GB, Class 10/A2) |
+| **Cooling** | Pre-installed aluminum heatsink case | Active cooler or quality heatsink case |
+| **Cables** | HDMI cable included | HDMI cable (micro-HDMI for Pi 5) |
+| **Extras** | Reader for MicroSD card | USB MicroSD card reader |
+
+You’ll also need a **laptop** (macOS, Windows, or Linux), a **monitor** with HDMI input, a **USB keyboard and mouse** for the initial setup, and a **stable internet connection** (Ethernet cable strongly recommended for first boot).
+
+## 🛠️ Hardware Assembly
+Pick your track based on what you purchased.
+
+### Track A — CanaKit (Pre-Assembled)
+Your CanaKit arrives nearly ready. Simply connect the provided **HDMI cable** to your monitor and the **USB-C power supply** to an outlet. **Do not plug in the power yet.** We will flash the software first.
+
+### Track B — DIY Components
+Assemble your parts:
+1.  Attach your **heatsink** or **active cooler** to the Pi's CPU chip.
+2.  Insert your **MicroSD card** into the slot on the underside of the board.
+3.  Connect the **HDMI cable** from your Pi to your monitor.
+4.  Connect the **USB keyboard and mouse** to the Pi's USB ports.
+5.  Plug the **Ethernet cable** into your router and the Pi (recommended).
+6.  Have the **USB-C power supply** ready, but **do not plug it in yet**.
+
+<Screenshot src="/media/ch1/pi_assembled.jpg" caption="A fully assembled Raspberry Pi 5 with active cooler, connected to HDMI and Ethernet." />
+
+## 💿 Install Raspberry Pi OS
+We use the official **Raspberry Pi Imager** tool for a foolproof installation.
+
+1.  **Download Raspberry Pi Imager** from [raspberrypi.com/software](https://www.raspberrypi.com/software/) on your laptop.
+2.  Insert your **MicroSD card** into your laptop (using the built-in slot or a USB reader).
+3.  Open Imager. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS Lite (64-bit)**. This is a lightweight, terminal-only version—perfect for a dedicated controller.
+4.  Click **Choose Storage** and select your MicroSD card.
+5.  **Crucial Step:** Before writing, click the gear icon (⚙️) to **set advanced options**. Enable:
+    *   **Set hostname:** `openclaw` (or a name you prefer)
+    *   **Enable SSH:** ✔ Use password authentication
+    *   **Set username and password:** Create secure credentials. *(Example: `batpilot` / `aStrongPassword!`)*
+    *   **Configure wireless LAN:** Optional. Better to use Ethernet for first boot.
+    *   **Set locale settings:** Your timezone and keyboard layout.
+6.  Click **Save**, then **Write**. Confirm to overwrite the drive. The process takes 5-10 minutes.
+
+<Screenshot src="/media/ch1/imager_advanced_settings.png" caption="The Raspberry Pi Imager advanced menu with hostname, SSH, and user credentials configured." />
+
+7.  When "Write Successful" appears, safely eject the MicroSD card from your laptop and insert it into your **powered-off** Raspberry Pi.
+
+## 🔌 Power On & First Boot
+1.  Ensure HDMI and Ethernet are connected.
+2.  **Plug in the USB-C power.** The Pi will boot. The green activity LED will blink.
+3.  On your monitor, you'll see the terminal boot messages, then a login prompt.
+4.  Log in with the **username and password** you set in the Imager.
+
+**Congratulations.** You are now inside your Raspberry Pi.
+
+## 🖥️ Terminal Primer (Your First Commands)
+You’ll interact with your Pi through a **command-line interface (CLI)**. Type commands and press `Enter`.
+
+Try these:
+*   `ls` — Lists files in the current directory.
+*   `pwd` — Prints your current working directory.
+*   `hostname -I` — Shows your Pi's **IP address** on the local network. **Note this down.**
+
+A command is typically `command -options arguments`. Use `Tab` to auto-complete and the up/down arrows to cycle through history. This is your new toolbox.
+
+## 🔄 System Updates & Upgrades
+First, ensure your software list is current and upgrade all packages.
+```bash
+sudo apt update && sudo apt full-upgrade -y
+```
+This may take a few minutes. If prompted to restart services, press `Enter`. Reboot if the kernel was updated: `sudo reboot`.
+
+## 🔌 Access Your Pi from Your Laptop
+Two ways to reach your Pi from your laptop. Pick whichever feels right. You can switch anytime.
+
+### Track A — Raspberry Pi Connect (Recommended for Beginners)
+**Raspberry Pi Connect** is Raspberry Pi's official remote-access tool. It works through a web browser and requires no networking knowledge, as it uses a cloud relay. This is recommended if you're new to Linux or remote access.
+
+**Steps:**
+1.  **On your Pi** (via the keyboard and monitor you used for first boot), install Pi Connect:
+    ```bash
+    sudo apt install rpi-connect
+    ```
+2.  Start the Pi Connect service:
+    ```bash
+    rpi-connect on
+    ```
+3.  Sign in to Raspberry Pi Connect:
+    ```bash
+    rpi-connect signin
+    ```
+    This command outputs a web URL. **Open this URL in a browser on your Pi** (if you have a desktop) or, in our Lite OS case, manually copy the URL to a browser on your **laptop**. Log in or create a free Raspberry Pi ID account at `id.raspberrypi.com` and approve the connection.
+
+4.  **On your laptop**, open a browser and go to: [https://connect.raspberrypi.com/](https://connect.raspberrypi.com/)
+5.  You'll see your Pi listed. Click **Connect → Shell** for terminal access.
+6.  ✅ You are now typing commands on your Pi from inside your laptop's browser. Tab completion and `Ctrl+C` work as expected.
+
+⚠️ **Pitfall:** Pi Connect needs an **internet connection on both the Pi and the laptop**. If the Pi goes offline, the connection drops. For local-network-only access, use SSH (Track B).
+
+### Track B — SSH (For Power Users, or LAN-Only Access)
+**SSH** is the classic remote-access protocol. It's faster, works without a cloud relay, and runs entirely over your local network. It's best if you want LAN-only access, plan to automate tasks, or need to tunnel ports for later chapters.
+
+**Steps:**
+1.  **On your laptop**, open a terminal (macOS/Linux: Terminal; Windows: PowerShell or Command Prompt).
+2.  Connect using the IP address you noted earlier (`hostname -I`):
+    ```bash
+    ssh username@192.168.1.100
+    ```
+    Replace `username` and the IP with your actual details.
+3.  Accept the security fingerprint prompt by typing `yes`.
+4.  Enter your Pi user's password when prompted (typing is hidden).
+5.  ✅ Your terminal prompt will change from your laptop's to your Pi's (e.g., `username@openclaw:~$ `). You are now in control.
+
+⚠️ **Pitfalls:**
+*   **`ssh: connect to host 192.168.1.100 port 22: Connection refused`** — SSH is not enabled on the Pi. Re-flash the SD card using Imager with SSH enabled in advanced settings.
+*   **`ssh: connect to host 192.168.1.100 port 22: Connection timed out`** — Your laptop and Pi are likely on **different networks**. Connect both to the same Wi-Fi, or connect the Pi via Ethernet to your home router.
+*   **Permission denied (password).** — Double-check your username and password. Passwords are case-sensitive.
+
+### Which One Should I Use?
+| If... | Use |
+| :--- | :--- |
+| You're brand new to Linux | **Pi Connect** |
+| You want a browser-based shell without setup gymnastics | **Pi Connect** |
+| You want to tunnel ports (needed for Mission Control in Chapter 4) | **SSH** |
+| You want lowest latency / LAN-only access | **SSH** |
+| You want to automate or script remote commands | **SSH** |
+
+💡 **Best of both worlds:** Many readers enable both. Use Pi Connect for quick browser access from anywhere, and SSH for the Mission Control tunnel and heavy lifting. We'll lean on SSH from Chapter 4 onward, so even if you start with Pi Connect, plan to get SSH working too.
+
+## 🛡️ Enable Automatic Security Updates
+To keep your Pi secure with minimal effort, enable `unattended-upgrades`.
+```bash
+sudo apt install unattended-upgrades -y
+sudo dpkg-reconfigure --priority=low unattended-upgrades
+```
+Select **"Yes"** when prompted. This configures automatic downloads and installation of security updates.
+
+## 💾 Save These for Later
+Store these details in a safe place (like a password manager):
+*   **Pi Hostname:** `openclaw` (or your chosen name)
+*   **Pi Local IP Address:** (e.g., `192.168.1.100`)
+*   **Username:** (e.g., `batpilot`)
+*   **Password:** Your strong password.
+*   **Raspberry Pi ID:** The email used for Pi Connect.
+
+You'll need this information repeatedly.
+
+## 🎉 What You Just Accomplished
+You transformed hardware into a working computer. You installed an operating system, booted it, accessed it locally and remotely (via both Pi Connect and SSH), updated its software, and configured it to maintain its own security. Your Raspberry Pi is now a stable, networked device ready to host your AI agent team. The hard part—the foundation—is done.
+
+## 🚨 Troubleshooting
+**General:**
+*   **No display on monitor:** Check HDMI cable is fully seated. Pi 5 uses micro-HDMI.
+*   **Red power LED is off/unstable:** Use the official 5V/5A power supply. Cheap chargers cause instability.
+*   **Ethernet not working:** Ensure cable is plugged into both router and Pi. The yellow LED by the port should light up.
+
+**Pi Connect:**
+*   **"Pi Connect page says my Pi is offline":** On the Pi, check service status with `systemctl status rpi-connect`. Restart it with `rpi-connect on`.
+*   **"Sign-in browser URL doesn't open on Pi":** The Lite OS has no browser. Use `rpi-connect signin --no-browser`, copy the printed URL, and open it on your laptop.
+*   **"Shell option is grayed out":** Wait ~30 seconds after enabling the service, then refresh the browser page.
+
+**SSH:**
+*   **"Connection refused":** SSH is not enabled. Re-flash SD card with Imager's advanced SSH setting.
+*   **"Connection timed out":** Laptop and Pi are on different networks. Connect them to the same network.
+*   **"Permission denied":** Verify username and password.
+
+## ✅ Next Steps
+1.  **Verify remote access** is working consistently from your laptop.
+2.  **Bookmark** the Pi Connect page or save your SSH command for easy access.
+3.  **Proceed to Chapter 2**, where we'll install OpenClaw and bring Jarvis online on this foundation.

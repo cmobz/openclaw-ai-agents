@@ -1,0 +1,71 @@
+# Troubleshooting
+## 📌 TL;DR
+- Always ask Jarvis first; use shell commands as a fallback.
+- Most issues are connectivity, API limits, or a stopped daemon.
+- Mission Control problems often stem from the Next.js app not running in tmux.
+- Keep your API keys updated and monitor your usage caps.
+
+## 🔌 Connectivity & Bot Issues
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| **Bot doesn't respond to Telegram messages.** | From another channel (e.g., Mission Control chat): `"Jarvis, are you there? Check the Gateway."` | 1. `openclaw gateway status`<br />2. `openclaw gateway restart`<br />3. Check `~/.openclaw/logs/gateway.log` for errors. |
+| **Jarvis replies but with errors in his response.** | The error text is usually from an API provider. Ask: `"Jarvis, what does this error mean?"` He can diagnose cap hits or key issues. | Inspect the error. If it mentions Anthropic or OpenRouter, proceed to the API section below. |
+
+## 🤖 API / Model Provider Errors
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| **Anthropic returns 401 (Invalid API Key).** | `"Jarvis, my Anthropic key seems wrong. Help me update it."` He'll guide you. | 1. Check `~/.openclaw/secrets/anthropic.env`<br />2. Ensure key is correct and file has `chmod 600`. |
+| **Anthropic returns "usage limit" or spend cap hit.** | `"Jarvis, my Anthropic cap is hit — can you pause non-essential cron jobs until the reset?"` | 1. Raise your monthly cap in the [Anthropic console](https://console.anthropic.com/).<br />2. Wait for the cap cycle to reset. |
+| **OpenRouter returns 401.** | `"Jarvis, test the OpenRouter key for Sherlock."` | 1. Check `~/.openclaw/secrets/openrouter.env`.<br />2. Verify key and `chmod 600`. |
+| **Brave Search returns 429 (rate limit).** | `"Jarvis, pause Sherlock's research jobs for 24 hours; we hit Brave's limit."` | Free tier is ~2000 queries/month. Wait for reset or upgrade plan. |
+
+## 🖥️ Mission Control Issues
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| **Dashboard shows "Connection refused" at `http://localhost:3000`.** | `"Jarvis, is Mission Control running? If not, start it."` | 1. `tmux attach -t mc` (to see logs)<br />2. If empty: `cd ~/.openclaw/workspace/mission-control && npm run dev` |
+| **Tasks tab is empty.** | `"Jarvis, check the /api/tasks endpoint for errors."` | 1. Check browser DevTools > Network for 500 errors.<br />2. Check MC server logs in tmux. |
+| **Data looks stale (not updating).** | `"Jarvis, refresh Mission Control data."` He can ping the SSE endpoint. | Force a hard browser refresh (`Ctrl+Shift+R` or `Cmd+Shift+R`). |
+
+## 🕵️ Agent-Specific Issues
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| **Mr. Stark says "claude: command not found".** | `"Jarvis, verify the Claude Code CLI is on PATH for Mr. Stark."` | 1. Run `claude --version`<br />2. If not found, check `npm root -g` and add to `$PATH` in `stark.sh`. |
+| **Mr. Stark runs but nothing happens (hangs).** | `"Jarvis, rebuild stark.sh from the contract in Chapter 3."` | Ensure `~/.openclaw/workspace/scripts/stark.sh` has the `--bypassPermissions` flag. |
+| **Sherlock's research is thin/irrelevant.** | `"Jarvis, ask Sherlock to use deeper sources and re-run the last query."` | Edit `~/.openclaw/workspace/memory/sherlock.md` to tighten Sherlock's default instructions; restart the main Jarvis session to reload. |
+| **Shakespeare truncates long output.** | `"Jarvis, have Shakespeare continue writing from where he stopped."` | DeepSeek V3.2 has a context window; Jarvis can manage chunking. |
+
+## 🔐 SSH / Access Issues
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| **SSH tunnel fails: "channel 3: open failed".** | `"Jarvis, ensure Mission Control is running on the Pi."` | 1. SSH into Pi and check if MC dev server is up.<br />2. Start it: `cd ~/.openclaw/workspace/mission-control && npm run dev` |
+| **Port 3000 in use on my laptop.** | Not applicable. | Use a different local port: `ssh -N -L 3100:localhost:3000 pi@<your-pi-ip>` |
+
+## 🍓 Pi Hardware Issues
+
+| Symptom | Likely Cause | Fix |
+| :--- | :--- | :--- |
+| **Pi fails to boot / solid red LED.** | Insufficient power or SD card issue. | 1. Use the official 5V/5A power supply for Pi 5.<br />2. Reseat the SD card. |
+| **System is slow, agents lag.** | High CPU usage, possibly from Mr. Stark. | 1. Check `top` or `htop`.<br />2. Mr. Stark's Claude Code work can spike CPU—this is normal. |
+
+## 🔄 Rebuild / Reset Scenarios
+**Symptom**: You want to start over from scratch.
+
+> ⚠️ **Back up first — this is destructive.** `rm -rf ~/.openclaw` deletes every agent, memory file, secret, and cron job without confirmation. Copy `~/.openclaw/workspace/memory/` and `~/.openclaw/secrets/` somewhere safe (an external drive, a password manager, your laptop) **before** you run the reset command. There is no undo.
+
+**Backup (required):**
+```bash
+cp -r ~/.openclaw/workspace/memory/  ~/openclaw-backup-memory-$(date +%Y%m%d)/
+cp -r ~/.openclaw/secrets/           ~/openclaw-backup-secrets-$(date +%Y%m%d)/
+```
+
+**Reset (only after backup):**
+```bash
+rm -rf ~/.openclaw
+```
+
+**Rebuild:** Re-run `openclaw setup` and walk back through Chapters 2–5. Your API keys are re-usable — copy them out of your backup into the fresh `~/.openclaw/secrets/` when you reach Chapter 2.

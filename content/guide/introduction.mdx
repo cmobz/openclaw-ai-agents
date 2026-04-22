@@ -1,0 +1,80 @@
+# OpenClaw Public Setup Guide: Introduction
+
+## 📌 TL;DR
+*   You'll build a personal AI team (Jarvis, Mr. Stark, Sherlock, Shakespeare) that runs on a Raspberry Pi you own.
+*   **Agent-first principle:** After setup, you'll manage your Pi by talking to your agents, not by typing shell commands.
+*   **Critical risks:** Your agents run real commands, your API keys live on the Pi, your data transits AI providers, and the software is young. Manage these before you start.
+*   You'll need a Raspberry Pi 5, a laptop, a Telegram account, and API keys from Anthropic and OpenRouter.
+*   The 5-chapter journey takes you from hardware assembly to daily automations, with a focus on learning through conversation.
+
+Imagine sending a text to an AI that lives on a Raspberry Pi on your desk. It has a name, a personality, and a team of specialists it can call on. When you ask it for research, it delegates. When you ask for code, it hands off to the engineer. That's what you'll have by the end of this guide.
+
+## 🎯 What You'll Build
+By the end of this guide, you will have built:
+*   A personal AI named **Jarvis** running on a $90 Raspberry Pi 5 you own.
+*   A team of 3 specialists — **Mr. Stark** (engineer), **Sherlock** (researcher), **Shakespeare** (writer) — coordinated by Jarvis.
+*   A custom dashboard (**Mission Control**) your agents build *for you* to watch them work.
+*   A set of daily automations — morning briefings, reminders, scheduled jobs — running unattended.
+
+**OpenClaw** is an open-source framework for running a personal team of AI agents on your own hardware. You bring the Pi and some API keys; OpenClaw supplies the orchestration, memory, personality, and delivery plumbing. The agents do the work; you direct them in conversation.
+
+## 🦾 The Agent Team
+Your team consists of four agents, each with a specialized role and model chosen for cost-effectiveness and performance.
+
+| Agent | Role | Model (Provider) |
+| :--- | :--- | :--- |
+| **Jarvis** | Orchestrator & Chief of Staff — your main chat, routes work to specialists | Claude Opus (Anthropic) |
+| **Mr. Stark** | Lead Engineer — writes code, debugs, runs shell commands on your Pi | Claude Sonnet via Claude Code CLI (Anthropic) |
+| **Sherlock** | Research Specialist — web search + synthesis | Qwen3-235B (OpenRouter) |
+| **Shakespeare** | Writer — drafts BRDs, emails, posts, project docs | DeepSeek V3.2 (OpenRouter) |
+
+Different models per role keeps your costs low, avoids putting all your eggs in one provider's basket, and plays to each model's strengths.
+
+## 🔄 The Agent-First Principle
+This guide has a philosophy: **after your agents are set up, you talk to them instead of typing commands at your Pi.** That means most chapters will feel different from a typical tutorial. Instead of 'run this command, then run this command,' you'll learn to describe what you want and let your team do the work.
+
+> **The bootstrap exception:** The first agent (Jarvis) has to be installed by running shell commands — there's no agent yet to delegate to. Same for his engineer (Mr. Stark). After that, you add new agents, install software, build features, and schedule automations entirely through conversation with Jarvis.
+
+## 🛡️ Before You Start: Know the Risks
+OpenClaw gives you real power — a team of AI agents with shell access, API keys, and memory of your life on a computer in your house. That's genuinely useful, and genuinely risky. Read this once before you commit to the setup. Each chapter includes inline reminders at the moments that matter most.
+
+**1. Your agents run real commands on your machine.**
+Mr. Stark has permission to write, modify, and execute files on your Pi. He's careful, but he's not infallible. Treat every prompt you send as if you were running the command yourself. Start with low-stakes projects (a snake game, a small script). Do not give agent access to your production infrastructure, your primary email, or your finances on day one. Build trust with them like you would with any new team member — small tasks first.
+
+**2. Your API keys live on your Pi.**
+Anthropic, OpenRouter, and Brave keys all end up in `~/.openclaw/secrets/*.env`. `chmod 600` keeps casual eyes out, but anyone with shell access or physical access to your Pi (or SD card) can recover them. Three rules: **use dedicated API keys for this setup** (never reuse a key you use elsewhere), **set a monthly spend cap in each provider's dashboard** (we learned this the hard way — costs spike fast with multi-agent workflows), and **rotate any key immediately if something feels off**.
+
+**3. Your prompts and outputs transit AI providers.**
+Anthropic sees what Jarvis and Mr. Stark see. OpenRouter sees what Sherlock and Shakespeare see. Each provider has its own privacy policy, jurisdiction, and data-retention rules. **Assume nothing you send through them is private.** Don't paste credentials, legal documents, client data, medical info, or anything else you'd regret a provider breach exposing. Your Telegram chat is similarly non-private: messages live on Telegram's servers indefinitely.
+
+**4. OpenClaw is young software.**
+You're early. Expect bugs, sharp edges, unexpected behavior, and occasional model weirdness. Prompt-injection attacks on agents are a real phenomenon — if you have an agent reading untrusted content (email, web, messages from others), a cleverly-crafted input could manipulate it. Keep backups of anything you can't afford to lose. Run with your eyes open, not your fingers crossed.
+
+None of this is meant to scare you off — the payoff is real and the risks are manageable. But you should walk in knowing the terms.
+
+## 📦 Prerequisites
+Before you start Chapter 1, make sure you have:
+*   A **Raspberry Pi 5** (recommended) or Pi 4. Chapter 1 covers hardware selection. ~$80-120 for a kit.
+*   A **laptop** (macOS, Windows, or Linux) to access the Pi from.
+*   A **Telegram account** (free, on your phone).
+*   Accounts at **Anthropic** (~$5 starter credit) and **OpenRouter** (~$5 credit). Brave Search has a free tier.
+*   Basic terminal familiarity — you should recognize `cd`, `ls`, and not be scared of a command line. You don't need to be a Linux expert.
+*   Patience. Plan a leisurely weekend, not a frantic evening.
+
+## 🗺️ The 5-Chapter Journey
+Here's what you'll do in each chapter:
+
+1.  **Chapter 1 — Hardware & OS.** You'll assemble your Pi (or unbox a pre-built kit), flash Raspberry Pi OS, and set up remote access from your laptop. Shell-heavy, because no agents exist yet.
+2.  **Chapter 2 — Install OpenClaw + Meet Jarvis.** You'll install the OpenClaw CLI, create a Telegram bot, and have your first conversation with Jarvis on your phone. This is where it stops feeling abstract.
+3.  **Chapter 3 — Build Your Team.** You'll add Mr. Stark (via one shell command to save a key, then a prompt to Jarvis), then Sherlock and Shakespeare the same way. This is the pivot point — you learn the pattern you'll use for every future agent.
+4.  **Chapter 4 — Build Your Mission Control.** You'll describe a dashboard in plain English; Jarvis proposes a plan; Mr. Stark builds it. You'll never clone a repo or type a build command. You'll learn the **describe → propose → approve → build → verify** loop that powers every future feature.
+5.  **Chapter 5 — Daily Automations + Cron.** You'll schedule your morning briefings, reminders, and daily wrap-up — all by telling Jarvis when you want things to happen.
+
+## 📘 How This Guide Works
+Three things to know:
+*   **Chapters build on each other.** Don't skip ahead. Each chapter assumes the last is complete.
+*   **Every prompt includes a verification block.** When we say "send this prompt," we also say "here's what you should see." If you don't see that, check the troubleshooting table.
+*   **Shell vs prompts.** You'll mostly see two kinds of instructions: `bash commands in code blocks` (for things you type into a terminal) and `💬 Try this` blocks (for messages you send to Jarvis in Telegram). The guide front-loads shell into Chapters 1-3; from Chapter 3 onward, prompts dominate.
+
+## ➡️ Ready to Start?
+Flip to Chapter 1. Grab a coffee. The first step is hardware — if you've already ordered a Pi, you're ahead. If not, Chapter 1 walks you through buying the right one.

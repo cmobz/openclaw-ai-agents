@@ -1,0 +1,306 @@
+# Chapter 4 — Build Your Mission Control
+
+## 📌 TL;DR
+- **Mission Control** is a custom dashboard *your agent team builds for you* — no downloads, no repos, nothing to clone.
+- You describe what you want in plain English (the view, the vibe, the tabs). **Jarvis proposes a plan**. You approve. **Mr. Stark builds**.
+- The build is iterative: start with an **MVP (3 tabs — Home, Tasks, Activity)**, verify it works, then extend to the full 9-tab layout.
+- To view it from your laptop, you run **one SSH tunnel command** and open `http://localhost:3000`.
+- By the end, you've proved the **agent-first loop**: **describe → propose → approve → build → verify**, all through Telegram.
+
+## 👋 Overview
+
+Up to now, you've talked to agents in Telegram. That's great for conversation. For structured work — seeing what's in flight, what's scheduled, what's been written — you want a dashboard.
+
+Here's the key principle: you won't clone a pre-built Mission Control. There's no repo to pull. **Your dashboard is going to be built from nothing, right now, by your team, to your spec.** That's the exercise of this chapter.
+
+Two caveats up front:
+1. This is genuinely a build, not an install. Plan for 60-90 minutes for the MVP, and another 30-60 for the full 9-tab version. Most of that time you're waiting on Mr. Stark; you check in periodically.
+2. Your dashboard will look different from anyone else's. That's the point. Yours reflects your priorities, your naming, your sense of design. Focus on *whether the behavior is right* (you send a Telegram message, a row appears in Tasks 3 seconds later) — not whether it matches a reference screenshot.
+
+## ⏱️ Time & Difficulty
+*   **Time:** 60-90 minutes for the MVP. 30-60 minutes more for the full layout. Spread across one or two sittings.
+*   **Difficulty:** Beginner-intermediate. You won't type code, but you will read Mr. Stark's progress reports and send clarifying prompts when he asks.
+*   **One SSH command** from your laptop at the end.
+
+## 🎯 The Build Loop
+
+This chapter teaches a core workflow. Every new feature you'll ever ask for follows this **agent-first build loop**:
+
+| Step | You Do | Agent Does |
+| :--- | :--- | :--- |
+| **1. Describe** | Tell Jarvis what you want in plain English. | Listens and parses your intent. |
+| **2. Propose** | — | Drafts a concrete plan (stack, tabs, build order) and posts it back. |
+| **3. Approve** | Read the plan, approve it, or tweak parts you don't like. | Waits for your green light. |
+| **4. Build** | — | Mr. Stark executes, reporting progress as he goes. |
+| **5. Verify** | Check the behavior matches what you asked for. | Confirms and stands by for the next request. |
+
+Learn this loop once. It's how you ship.
+
+---
+
+## 🚀 Step 1 — Describe What You Want
+
+This is the ENTIRE user prompt you send. It contains what you want to see and how it should feel, not *how* to build it. The agents will figure out the technical details.
+
+```
+💬 Try this
+> Jarvis, I want to build Mission Control — a custom dashboard for watching our agent team work. I'm going to describe what I want; you figure out how to build it. Here's the spec:
+>
+> **What it is:**
+> A web dashboard I can open in my laptop's browser to see what our team is doing in real time. Nothing to install on my laptop beyond a browser. It should run on the Pi and update live as you and the specialists do work.
+>
+> **The 9 tabs I want:**
+> 1. Home — at-a-glance overview: today's in-progress work, upcoming scheduled jobs, pinned projects, recent activity.
+> 2. Tasks — a Kanban board (Backlog / In Progress / Needs Review / Done) for everything the team is working on. Drag-and-drop to move cards.
+> 3. Calendar — week/day/month view showing every scheduled job and task due date. Colorful, with emoji badges per agent or job type.
+> 4. Projects — grid of all active and completed projects with progress bars. Click a project to see its tasks, linked docs, and activity.
+> 5. Docs — browser and markdown renderer for everything the team writes (research briefs, emails, project docs). Group by folder.
+> 6. Memory — timeline of daily memory files. Click a date to read that day's notes rendered as markdown.
+> 7. Team — an org chart (me → Jarvis → specialists). Click an agent to see their recent activity and roles.
+> 8. Activity — live event feed showing every action (task claimed, doc created, job finished) with timestamps and who did it.
+> 9. Settings — theme (light/dark), refresh interval, export database button, basic prefs.
+>
+> **How it should feel:**
+> - Clean, modern, dense-but-breathable. Think "well-designed developer tool", not corporate SaaS.
+> - Dark mode by default, with a light-mode toggle.
+> - Left sidebar for tab navigation (with emoji icons); main content pane on the right.
+> - Live updates — I don't want to refresh. Events and status changes appear within a few seconds.
+> - Mobile-friendly enough that I can glance at it on my phone when I'm away from the laptop.
+> - Small "agent status" dot indicators (green = idle, yellow = working, red = error) visible on the Home tab and Team tab.
+> - Emoji used thoughtfully — as category badges, not decoration.
+>
+> **Non-negotiables:**
+> - Runs on the Pi, accessible only over my local network (no public internet exposure, ever).
+> - All agents write events/data to it as they work — the dashboard is the single source of truth.
+> - Can be stopped and started by me via a Telegram message to you.
+>
+> **Build it in two phases** so I can verify before we commit to the full thing:
+> - **Phase 1 (MVP):** Get Home, Tasks, and Activity working end-to-end. Live updates, a seed of real data, and all three tabs interlinked. That's the proof of concept.
+> - **Phase 2:** After I confirm Phase 1 works, add the remaining 6 tabs (Calendar, Projects, Docs, Memory, Team, Settings).
+>
+> Before Mr. Stark touches anything, send me back a plan: what you'll build, the rough stack you picked and why, how you'll split the MVP from Phase 2, and anything you need from me (like design choices to confirm). I'll approve the plan, then you hand it to him.
+```
+
+## 📋 Step 2 — Review Jarvis's Plan
+
+Jarvis will translate your description into a concrete engineering plan. Read it to understand the approach before giving the go-ahead.
+
+> **Heads up:** the example below is representative, not exact. Your Jarvis will make different calls on stack, colors, and scope depending on what you wrote and what he judges reasonable. Focus on whether the plan *captures your intent*, not whether it matches this template word for word.
+
+```
+✅ What you should see
+Jarvis replies with a plan post that looks roughly like this:
+
+---
+🦾 **Plan — Mission Control MVP → Full**
+
+**Stack I'll have Mr. Stark use:**
+- A Node.js web app (Next.js) for speed and so every page can use live updates easily.
+- A small local database (SQLite via Prisma) so data persists across restarts — no external services needed.
+- Server-Sent Events for the "updates appear in a few seconds" requirement.
+- Tailwind CSS for the clean, dense UI.
+- Bound to 127.0.0.1 + port 3000 on the Pi; you'll reach it via an SSH tunnel from your laptop.
+- Runs under tmux so it survives if you close your terminal.
+
+**MVP scope (Phase 1, ~45-60 min):**
+- Database schema: agents, tasks, projects, docs, activity events.
+- Seeds agent rows for the 4 of us (me, Mr. Stark, Sherlock, Shakespeare).
+- Home tab (stats + activity feed), Tasks tab (Kanban), Activity tab (live event stream).
+- Left sidebar with emoji icons. Dark mode default.
+
+**Phase 2 scope (after you approve MVP):**
+- Calendar, Projects, Docs, Memory, Team, Settings tabs.
+- Light-mode toggle, refresh-interval setting, DB export.
+
+**Mobile friendliness:** Tailwind-based, responsive. Will work at phone widths without a dedicated app.
+
+**Things I'd like you to confirm before Mr. Stark starts:**
+- Accent color — I'm going with a muted violet (#7c3aed) unless you want something else.
+- Date format — I'll default to your US/Central format (e.g., "Apr 21, 7:45 PM"). OK?
+- Empty states — if a tab has no data yet, I'll show a friendly placeholder ("No tasks yet — ask me to add one"). OK?
+
+Reply "go" and I'll hand it to Mr. Stark. Or tell me what to change.
+---
+
+Read the plan. If you're happy, reply "go" (or "approved"). Tweak anything you don't like — reduce scope, change a color, skip a tab.
+```
+
+## ✅ Step 3 — Approve and Let Mr. Stark Build
+
+Once you approve, Mr. Stark takes over. You'll see periodic, plain-English progress updates in Telegram.
+
+```
+✅ What you should see
+1. Jarvis: "Approved. Handing to Mr. Stark. Phase 1 ETA ~45-60 min. I'll post progress."
+2. Mr. Stark sends periodic Telegram updates — plain English, not code:
+   • "Scaffolded the web app. Added the shared database with tables for agents, tasks, projects, docs, and events."
+   • "Seeded the four agent rows (Jarvis, Mr. Stark, Sherlock, Shakespeare)."
+   • "Built the live event endpoint. Home tab rendering with real data."
+   • "Tasks tab working — drag-and-drop tested."
+   • "Activity tab live, updates showing within ~3 seconds of a new event."
+   • "Dev server running on port 3000 (Pi only). Ready for you."
+3. Jarvis closes Phase 1: "✅ Phase 1 is up. Open the SSH tunnel below, then tell me if it looks right. Once you confirm, we'll roll Phase 2."
+```
+
+> **Note:** If Mr. Stark hits a design decision mid-build, Jarvis answers with the reasonable default from the approved plan. You are only interrupted for things that weren't in the plan.
+
+## 🔗 Step 4 — Open Mission Control from Your Laptop
+
+The dashboard runs on your Pi. To access it from your laptop, open an **SSH tunnel**. This securely forwards the Pi's port 3000 to your laptop.
+
+```bash
+ssh -N -L 3000:localhost:3000 yourusername@your-pi-ip
+```
+*   Replace `yourusername` and `your-pi-ip` with your actual Pi credentials.
+*   The `-N` flag means "no remote command," keeping the connection clean for just tunneling.
+*   Leave this terminal window open. Minimize it.
+
+Now, open your laptop's browser and go to: **`http://localhost:3000`**
+
+## 🔍 Step 5 — Verify the MVP
+
+Don't just look — test. Send a prompt that should cause an immediate, visible change in the dashboard.
+
+```
+💬 Try this
+> Jarvis, is Mission Control running? Also, add a test task: "Verify Mission Control MVP". Assign it to me.
+```
+
+```
+✅ What you should see
+1. Jarvis confirms the server is up in tmux, serving on 127.0.0.1:3000.
+2. Jarvis confirms the task was created.
+3. In your browser, within 3 seconds: the new task appears in the Tasks tab Backlog column, AND an event appears in the Activity tab feed ("task.created by Jarvis").
+```
+
+If that smoke test works, the MVP is proven. You've validated the live update pipeline and the agent-to-dashboard connection.
+
+## 🚀 Step 6 — Greenlight Phase 2
+
+Now, instruct the team to complete the full dashboard.
+
+```
+💬 Try this
+> Jarvis, Phase 1 looks great. Let's do Phase 2 — add Calendar, Projects, Docs, Memory, Team, and Settings.
+```
+
+```
+✅ What you should see
+Same rhythm: Mr. Stark posts progress per tab as he lands it. He'll pause for input on anything that needs a design decision (for example: "What should the Memory tab's default view be — most recent file, or today's file?"). Answer him and he moves on. Phase 2 usually lands in 30-60 min.
+```
+
+## 🗺️ Your 9-Tab Tour
+
+Once Phase 2 is complete, your Mission Control will have these nine core tabs:
+
+| Tab | Emoji | Purpose | What to Look For |
+| :--- | :--- | :--- | :--- |
+| **Home** | 🏠 | At-a-glance overview and pinned items. | Today's stats, upcoming jobs, recent activity snippet. |
+| **Tasks** | 📋 | Kanban board for team workflow. | Drag-and-drop columns (Backlog, In Progress, etc.). Cards update live. |
+| **Calendar** | 📅 | Visual schedule of jobs and deadlines. | Week/day/month views. Color-coded events with emoji badges. |
+| **Projects** | 📁 | Track multi-step initiatives. | Grid with progress bars. Click into tasks, docs, and activity. |
+| **Docs** | 📄 | Browse and read everything the team writes. | Files from `~/.openclaw/workspace/`. Rendered markdown, grouped by folder. |
+| **Memory** | 🧠 | Timeline of your daily notes. | Click a date to read that day's memory file, rendered cleanly. |
+| **Team** | 👥 | Interactive org chart and agent status. | Hierarchy (You → Jarvis → Specialists). Status dots (green/yellow/red). |
+| **Activity** | 🔔 | Live feed of every system event. | Chronological stream. Updates appear within seconds of an action. |
+| **Settings** | ⚙️ | Basic preferences and controls. | Light/dark toggle, refresh interval, database export button. |
+
+## 💬 Prompts to Exercise Mission Control
+
+Try these interactions to see the dashboard respond in real time.
+
+**1. Create a task and watch it flow.**
+```
+💬 Try this
+> Jarvis, please add a task: "Draft Q2 planning doc". Put it in Backlog and assign it to Shakespeare.
+```
+```
+✅ What you should see
+Task appears in the Backlog column. An "task.created" event appears in the Activity feed.
+```
+
+**2. Watch an agent work.**
+```
+💬 Try this
+> Shakespeare, please draft a short LinkedIn post about agentic workflows. Keep it to 3 sentences.
+```
+```
+✅ What you should see
+In the Activity tab: "task.claimed by Shakespeare", then "doc.created". The Docs tab will show the new file. The task moves to "In Progress," then "Done."
+```
+
+**3. Schedule a reminder.**
+```
+💬 Try this
+> Jarvis, remind me in 2 minutes to "Check Mission Control Calendar."
+```
+```
+✅ What you should see
+A scheduled job appears in the Calendar tab. In 2 minutes, a reminder appears in Telegram AND an "job.completed" event appears in the Activity tab.
+```
+
+**4. Create and complete a project.**
+```
+💬 Try this
+> Jarvis, let's start a project called "Dashboard Onboarding". Add the two tasks we just did as related items.
+```
+```
+✅ What you should see
+A new card appears in the Projects tab. The two tasks are linked under it. Progress bar updates as tasks are completed.
+```
+
+**5. Write to memory.**
+```
+💬 Try this
+> Jarvis, add to memory: "Successfully built and tested Mission Control. The live updates are working perfectly."
+```
+```
+✅ What you should see
+An "memory.updated" event in Activity. The new note appears in today's entry in the Memory tab.
+```
+
+## 🔁 How the Dashboard Stays in Sync
+
+The dashboard and all your agents share the same local database on the Pi. When an agent performs an action—creates a task, writes a doc, completes a job—it writes an event to this database.
+
+The dashboard uses a **live update** pipeline that listens for new events. When one arrives, it pushes a notification to every open browser tab within a few seconds. This is why you see changes without refreshing the page.
+
+## 🛡️ Security Note
+
+Mission Control has **no built-in login or password**. It binds only to `127.0.0.1` (localhost) on the Pi.
+
+*   **This is by design.** Your access is secured by your SSH tunnel, which requires your Pi credentials.
+*   **Do not expose port 3000 to the internet.** It is meant for your local network only.
+*   For secure remote access outside your home network, look into **Tailscale** or a **Cloudflare Tunnel** — both are solid options worth exploring once you're comfortable with the basics.
+
+## 📝 Save These for Later
+*   **Mission Control URL:** `http://localhost:3000` (when your SSH tunnel is active)
+*   **To stop it:** `> Jarvis, stop Mission Control.`
+*   **To restart it:** `> Jarvis, restart Mission Control.`
+*   **To extend it:** Describe what you want in Telegram. Every new feature follows the same **describe → propose → approve → build → verify** loop.
+
+## ✅ What You Just Accomplished
+
+1.  **Described a dashboard in plain English** — no tech spec required.
+2.  **Reviewed and approved** Jarvis's proposed technical plan.
+3.  **Watched Mr. Stark build the MVP** and verified it worked with a live test.
+4.  **Greenlit Phase 2** and received a full, custom 9-tab dashboard.
+5.  Used **zero shell commands on the Pi**; only one SSH tunnel command from your laptop.
+6.  Most importantly, you **ran the agent-first build loop end-to-end** — describe, propose, approve, build, verify. **This is how every future feature ships.**
+
+## 🆘 Troubleshooting
+
+| Symptom | Agent-First Fix | Shell Fallback |
+| :--- | :--- | :--- |
+| **Jarvis hasn't proposed a plan within ~5 minutes.** | `> Jarvis, are you still working on that plan? Send what you have.` | — |
+| **I don't understand Jarvis's plan (e.g., "Prisma", "SSE").** | `> Jarvis, explain this part of your plan in plain English: <paste>.` | — |
+| **Mr. Stark stopped posting progress mid-build.** | `> Jarvis, is Mr. Stark still working? Show me the last step and what's next.` | Check his log: `tail -f /tmp/stark-mission-control.log` |
+| **Browser shows "Connection refused" on localhost:3000.** | `> Jarvis, is Mission Control running? If not, start it.` | SSH to Pi; `tmux attach -t mc` to see errors. |
+| **SSH tunnel error: `channel 3: open failed`.** | The server isn't running. Ask Jarvis to start it. | On the Pi: `curl -s http://127.0.0.1:3000` should return HTML. |
+| **Port 3000 is in use on your laptop.** | — | Use a different laptop port: `ssh -N -L 3100:localhost:3000 ...` then browse to `localhost:3100`. |
+| **Build diverged from what you described.** | `> Jarvis, the <tab> isn't doing <X>. Have Mr. Stark fix it.` | — Expect 2-4 refinement rounds. That's normal. |
+| **Dashboard not running after a Pi reboot.** | `> Jarvis, start Mission Control again.` | Expected — tmux doesn't survive reboot. See [Appendix: Mission Control Persistence](/appendix/mission-control-persistence) for the manual recipe and an optional auto-check entry. |
+
+## ➡️ What's Next
+
+**Chapter 5: Daily Automations & Cron.** Now that Mission Control is live, we'll wire it up with scheduled jobs — morning briefings, reminders, daily wrap-up — all by telling Jarvis *when* you want things to happen. The dashboard's Calendar and Activity tabs will be your window into these running processes.

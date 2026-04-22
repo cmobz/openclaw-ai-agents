@@ -1,0 +1,184 @@
+# Chapter 5: Daily Automations & Cron
+
+## 📌 TL;DR
+*   **Cron is your schedule engine.** It's a standard system tool that runs Jarvis's automated tasks at set times, like a supercharged alarm clock for your AI.
+*   **Set up your daily briefing pack in one chat.** Ask Jarvis to create a series of morning and evening reports (news, health, business, market) delivered to your Telegram.
+*   **Add personal reminders conversationally.** Tell Jarvis "remind me to..." for one-off tasks, and it will schedule them for you.
+*   **Manage everything visually.** View, pause, or edit your scheduled jobs on the Mission Control Calendar tab (`http://localhost:3000/calendar`).
+
+## 👋 Overview
+
+Welcome to the final how-to chapter. Here, you'll transform Jarvis from an on-demand assistant into a proactive partner. You'll learn to use **cron**—the system scheduler—to run automations while you sleep, ensuring you wake up to a prepared briefing and end your day with a thoughtful wrap-up.
+
+This chapter builds on everything you've set up: your AI models, your Telegram bridge, and your Mission Control dashboard. By the end, your OpenClaw setup will be fully operational, handling routine intelligence gathering and reminders automatically.
+
+## 📦 Requirements
+
+Before starting, ensure you have completed the previous chapters. You will need:
+*   A fully configured OpenClaw system (Chapters 1-4).
+*   The Telegram bridge active and tested (Chapter 2).
+*   Mission Control accessible at `http://localhost:3000`.
+*   Your AI provider API keys loaded and functional.
+
+## 🚀 Install
+
+Nothing to install. OpenClaw ships with its own scheduler — completely separate from the Unix `cron` you may have heard of. Jobs live under `~/.openclaw/cron/` and are executed by the OpenClaw Gateway daemon that started running when you ran `openclaw setup` in Chapter 2.
+
+**Key Concept:** You never edit schedule files by hand. You tell Jarvis in plain English when you want something to happen, and Jarvis writes the schedule for you safely.
+
+## 🎮 Usage
+
+This section is your step-by-step guide to creating and managing automated schedules.
+
+### 🤖 What Scheduling Does in OpenClaw
+
+Think of OpenClaw's scheduler as a supercharged alarm clock for your AI team. You tell Jarvis *what* to do and *when* in plain English, and it handles the technical details: writing the schedule, picking the right agent to run the job, and delivering the output to your chosen channel (like Telegram).
+
+All scheduled jobs appear on the **Mission Control Calendar** (`http://localhost:3000/calendar`) with colored emoji badges, giving you a single, clear view of your automation landscape.
+
+### 📅 Set Up the Default Daily Briefing Pack
+
+The most powerful starter automation is a coordinated morning briefing sequence. You can set up the entire pack with one request.
+
+**⏱️ Time Estimate:** 5 minutes.
+
+💬 Try this
+> In your Jarvis chat, send the following prompt:
+> ```
+> Please set up my default daily briefing pack on Telegram. I want:
+> - AI news brief from Sherlock at 8:00 AM
+> - System healthcheck at 8:00 AM
+> - Daily business pitch at 8:15 AM
+> - Daily briefing (weather + top news) at 8:30 AM
+> - Daily triage of new proposals at 8:30 AM
+> - Market briefing at 9:00 AM
+> - A daily wrap-up at 7:00 PM
+> ```
+
+✅ What you should see
+Jarvis will acknowledge each task and confirm it has scheduled them. It will output a summary list showing the time, agent, and command for each new cron job. In Mission Control, navigate to the **Calendar** tab to see a visual timeline of these new jobs, each with a distinct emoji (e.g., 📰 for news, 💼 for business pitch).
+
+**Understanding the Pack:**
+*   **08:00 Sherlock & Healthcheck:** Kicks off with a scan of AI news and a quick system diagnostic.
+*   **08:15 Business Pitch:** Generates a creative business idea to spark your day.
+*   **08:30 Daily Briefing & Triage:** Delivers weather and headline news, while also processing any new project proposals that have come in.
+*   **09:00 Market Briefing:** Provides a snapshot of key financial markets.
+*   **19:00 Daily Wrap-Up:** Reviews the day's activity, summarizes accomplishments, and surfaces pending items.
+
+💬 Try this (optional — only if this niche interests you)
+> You can extend your automations to cover personal hobbies or price-tracking. For example, if you're researching buying a car wash business, ask Jarvis:
+> ```
+> Add a "car wash scout" job that runs at 9:30 AM, checking for same-day deals within 50 miles of Austin, TX, and sending them to me on Telegram.
+> ```
+
+✅ What you should see
+Jarvis will schedule a daily scout tailored to your criteria. This pattern — *"schedule a researcher agent to watch a topic and report"* — works for anything you'd otherwise check manually each day.
+
+### ➕ Add a Personal One-Off Reminder
+
+Beyond daily reports, you can schedule single, conversational reminders.
+
+**⏱️ Time Estimate:** 2 minutes.
+
+💬 Try this
+> ```
+> Remind me to take out the trash every Wednesday at 6 PM.
+> ```
+
+✅ What you should see
+Jarvis will confirm the reminder is set, specifying the command it will run (e.g., sending a message via the Telegram agent) and the cron schedule it created (like `0 18 * * 3`).
+
+### 👁️ Verifying Your Scheduled Jobs
+
+You have two primary ways to view your schedule.
+
+**1. Mission Control Calendar (Recommended)**
+Visit `http://localhost:3000/calendar` (with your SSH tunnel active). You'll see a timeline view with all jobs color-coded by agent type and marked with emojis. This is the easiest way to get a visual overview.
+
+**2. Ask Jarvis**
+This is the fastest way, and it always works.
+
+💬 Try this
+> ```
+> What jobs do you have scheduled for me?
+> ```
+
+✅ What you should see
+Jarvis will list all active jobs in a readable format — schedule, which agent runs it, and where it delivers. He reads this directly from OpenClaw's scheduler, so it's always in sync with reality.
+
+*(Advanced note: if you need the raw job definitions, they live under `~/.openclaw/cron/` as JSON files. You should almost never need to touch these directly.)*
+
+### ✏️ Editing or Pausing a Job
+
+Life changes, and so do your schedules. You manage jobs through conversation.
+
+**To Pause a Job:**
+💬 Try this
+> ```
+> Pause my 9 AM market briefing.
+> ```
+
+✅ What you should see
+Jarvis will comment out that specific line in the crontab, disabling it. The job will remain visible but inactive on the Calendar.
+
+**To Change a Job's Time:**
+💬 Try this
+> ```
+> Change my daily wrap-up to run at 8 PM instead of 7.
+> ```
+
+✅ What you should see
+Jarvis will locate the existing wrap-up job, remove the old schedule, and create a new one for the updated time. It will confirm the change.
+
+**To Delete a Job:**
+Simply ask Jarvis to "remove" or "delete" the specified job.
+
+## ⚙️ Configuration
+
+Scheduled jobs are configured via their cron syntax, which Jarvis generates. The format is:
+`(minute) (hour) (day of month) (month) (day of week) (command)`
+
+Example: `0 9 * * * /path/to/agent` runs at 9:00 AM every day.
+
+All configuration is managed dialogically with Jarvis; you shouldn't need to edit this manually.
+
+## 🛠️ Development
+
+Not applicable for this guide chapter. This focuses on end-user usage of the established cron system.
+
+## ✅ Testing
+
+The best test is to see the jobs run. However, you can trigger a job manually to verify its output.
+
+💬 Try this
+> Ask Jarvis to run a scheduled task immediately:
+> ```
+> Can you run the daily briefing agent now and send it to me?
+> ```
+
+✅ What you should see
+You should receive the full daily briefing (weather, news) in your Telegram chat immediately, identical to what you would get at the scheduled time. This confirms the agent and delivery channel work correctly.
+
+## ⚠️ Troubleshooting
+
+| Symptom | Agent-First Fix (Try This First) | Shell Fallback (If Needed) |
+| :--- | :--- | :--- |
+| **A job didn't run.** | `> Jarvis, my <job> didn't run this morning. Check the run log and the Gateway status.` | 1. Check the job's run log (path below).<br />2. Ensure your Pi was on and awake at the scheduled time.<br />3. Restart the Gateway: `openclaw gateway restart`. |
+| **Output is missing or incomplete.** | `> Jarvis, was an API limit hit? Show me the error from the last run.` | Check your AI provider dashboard (Anthropic console / OpenRouter) for usage-cap errors. |
+| **Too many/too noisy messages.** | `> Jarvis, make my <job> weekly instead of daily.` | — (no need to touch files) |
+| **I want to see *why* a job failed.** | `> Jarvis, show me the log for the last <job> run.` | Raw logs live in `~/.openclaw/cron/<job-id>/runs/`. |
+
+**Checking the Run Log:**
+Every scheduled job execution is logged. The easiest way to see what happened is to ask Jarvis:
+
+```
+Show me the last run of my daily briefing.
+```
+
+Jarvis will fetch the run output and surface any errors. If you want to look at the raw files yourself, each job's history lives under `~/.openclaw/cron/<job-id>/runs/`, and general Gateway logs are under `~/.openclaw/logs/`.
+
+## 📜 Closing Note
+
+**Congratulations.** With this chapter, you have completed the core **Public Setup Guide**. Your OpenClaw system is now a fully automated intelligence and productivity platform.
+
+**Next up:** The **Appendix** contains additional reference material, advanced configuration tips, and a FAQ. Return to it as needed when exploring beyond the basics.
